@@ -1,0 +1,69 @@
+# The stacey.io layer — this is what is-a.dev doesn't have.
+# After a merge touching domains/, tell the stacey backend which subdomains
+# changed. The backend then:
+#   - creates/updates the site record and generates its site_id
+#   - binds the site_id to the subdomain as an allowed widget origin
+#   - emails the owner their dashboard link (where they add their AI key)
+#   - on deletions: revokes the site_id (instant widget kill switch)
+name: Provision assistant
+
+on:
+    push:
+        branches: [main]
+        paths:
+            - "domains/*"
+
+    workflow_dispatch:
+
+concurrency:
+    group: ${{ github.ref }}-provision
+
+jobs:
+    provision:
+        name: Sync with stacey backend
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+
+            - name: Collect changed domain files
+              id: changes
+              env:
+                  BEFORE: ${{ github.event.before }}
+              run: |
+                  # Diff the WHOLE push (event.before..HEAD), not just HEAD~1 —
+                  # a push carrying several commits must provision every domain
+                  # file it touched. Falls back to HEAD~1 (workflow_dispatch,
+                  # force-push, first push), then to the empty tree (new repo).
+                  BASE="$BEFORE"
+                  if [ -z "$BASE" ] || [ "$BASE" = "0000000000000000000000000000000000000000" ] || ! git cat-file -e "$BASE^{commit}" 2>/dev/null; then
+                    BASE="$(git rev-parse HEAD~1 2>/dev/null || git hash-object -t tree /dev/null)"
+                  fi
+                  {
+                    echo 'PAYLOAD<<JSON'
+                    git diff --name-status "$BASE" HEAD -- 'domains/*.json' | python3 -c "
+                  import sys, json, os
+                  changes = []
+                  for line in sys.stdin:
+                      parts = line.strip().split('\t')
+                      if len(parts) < 2: continue
+                      status, path = parts[0], parts[-1]
+                      sub = os.path.basename(path).removesuffix('.json')
+                      entry = {'subdomain': sub, 'status': status}
+                      if status != 'D' and os.path.exists(path):
+                          entry['data'] = json.load(open(path))
+                      changes.append(entry)
+                  print(json.dumps({'changes': changes, 'commit': os.environ.get('GITHUB_SHA','')}))
+                  "
+                    echo 'JSON'
+                  } >> "$GITHUB_OUTPUT"
+
+            - name: Notify stacey backend
+              env:
+                  PAYLOAD: ${{ steps.changes.outputs.PAYLOAD }}
+              run: |
+                  curl -sf -X POST "https://api.stacey.io/internal/provision" \
+                    -H "Authorization: Bearer ${{ secrets.STACEY_PROVISION_TOKEN }}" \
+                    -H "Content-Type: application/json" \
+                    -d "$PAYLOAD"

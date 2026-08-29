@@ -1,0 +1,13 @@
+{
+    "owner": {
+        "username": "stacey-io",
+        "email": "hello@stacey.io"
+    },
+    "records": {
+        "TXT": "Welcome to stacey.io - free subdomains + a drop-in AI assistant for your project"
+    },
+    "stacey": {
+        "assistant": true,
+        "prompt": "You are the stacey.io helper. Explain how to register a subdomain and set up the assistant widget. Be brief and friendly, and point people to the register repo."
+    }
+}

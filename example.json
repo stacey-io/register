@@ -1,0 +1,23 @@
+{
+    "$comment": "Copy this file to <your-subdomain>.json and edit. Delete all $comment lines before opening your PR.",
+
+    "owner": {
+        "username": "your-github-username",
+        "email": "you@example.com"
+    },
+
+    "records": {
+        "$comment": "Pick ONE style: CNAME (most common) or A/AAAA. Supported: A, AAAA, CAA, CNAME, MX, TXT.",
+        "CNAME": "your-github-username.github.io"
+    },
+
+    "proxied": false,
+
+    "stacey": {
+        "$comment": "Set assistant:true to get the drop-in AI chat widget. Your site_id is generated automatically after merge — you NEVER put keys or IDs in this file. Configure your AI key at https://stacey.io/dashboard after your PR is merged.",
+        "assistant": true,
+
+        "$comment2": "OPTIONAL: give your assistant a persona. Max 500 characters. This file is PUBLIC — no secrets here. It's layered UNDER stacey's base safety rules and can be edited later in your dashboard.",
+        "prompt": "You are the friendly assistant for my project. Keep answers short, link to the docs page when relevant, and use a casual tone."
+    }
+}

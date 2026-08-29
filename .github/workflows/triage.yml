@@ -1,0 +1,43 @@
+# AI triage for registration PRs.
+# SECURITY: uses pull_request_target so secrets are available, therefore it
+# NEVER checks out or executes PR code. It only checks out the trusted base
+# branch and reads the PR's changed files via the GitHub API.
+name: Triage
+
+on:
+    pull_request_target:
+        types: [opened, synchronize]
+        paths:
+            - "domains/*"
+
+permissions:
+    contents: read
+    pull-requests: write
+    issues: write
+
+concurrency:
+    group: ${{ github.event.pull_request.number }}-triage
+    cancel-in-progress: true
+
+jobs:
+    triage:
+        name: AI review
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+              with:
+                  ref: ${{ github.event.repository.default_branch }}
+
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: 20
+
+            - name: Triage the PR
+              env:
+                  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+                  SAFE_BROWSING_KEY: ${{ secrets.SAFE_BROWSING_KEY }}
+                  PR_NUMBER: ${{ github.event.pull_request.number }}
+                  PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+                  REPO: ${{ github.repository }}
+              run: node util/triage.mjs

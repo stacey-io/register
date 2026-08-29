@@ -1,0 +1,12 @@
+{
+    "name": "stacey-register",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "test": "ava tests/*.test.js --timeout=1m"
+    },
+    "devDependencies": {
+        "ava": "^6.1.3",
+        "fs-extra": "^11.2.0"
+    }
+}
