@@ -2,10 +2,6 @@
 
 <p align="center"><strong>stacey.io</strong> gives your project a free <code>.stacey.io</code> subdomain <em>plus</em> a drop-in AI chat assistant — one JSON file, one script tag, done.</p>
 
-<p align="center">
-  {is-a.dev : free subdomain} &nbsp;·&nbsp; {stacey.io : free subdomain <strong>+ chat assistant</strong>}
-</p>
-
 ---
 
 ## ✏️ Register
@@ -90,8 +86,6 @@ report abuse on any of them. The assistant backend (key vault, chat proxy,
 dashboard) is closed-source and holds no registry data of its own; this repo
 remains the source of truth for who owns what.
 
-## 🙏 Credits
+## 📜 License
 
-The registration pipeline is adapted from the excellent
-[is-a-dev/register](https://github.com/is-a-dev/register) (MIT License). If you
-just want a subdomain without the assistant, go give them a star too.
+MIT — see [LICENSE](LICENSE) for full terms and third-party attributions.

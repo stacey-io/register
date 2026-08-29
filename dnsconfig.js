@@ -1,8 +1,7 @@
-// stacey.io zone-as-code
-// Adapted from is-a-dev/register (MIT License) — https://github.com/is-a-dev/register
+// stacey.io zone-as-code (see LICENSE for third-party attributions)
 //
 // Every JSON file in ./domains becomes DNS records for <filename>.stacey.io.
-// Deliberately supports a SMALLER record surface than is-a.dev for v1:
+// Deliberately supports a SMALLER record surface for v1:
 // A, AAAA, CAA, CNAME, MX, TXT. (NS/DS delegation is a big abuse surface —
 // add later only if genuinely needed.)
 
@@ -81,7 +80,7 @@ for (var subdomain in domains) {
 }
 
 // Reserved names are actively black-holed (192.0.2.1 = TEST-NET-1) with the
-// Cloudflare proxy ON, so nobody can squat or spoof them. Same trick is-a.dev uses.
+// Cloudflare proxy ON, so nobody can squat or spoof them.
 var reserved = require("./util/reserved.json");
 
 for (var i = 0; i < reserved.length; i++) {

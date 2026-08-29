@@ -1,5 +1,4 @@
 // Schema + hygiene tests for every file in domains/
-// Inspired by is-a-dev/register's test suite (MIT).
 import t from "ava";
 import fs from "fs-extra";
 import path from "path";

@@ -2,7 +2,7 @@
 // workflow exports PR_AUTHOR and CHANGED_FILES / DELETED_FILES.
 // This is the rule that stops anyone from hijacking someone else's subdomain:
 // the PR author's GitHub username must match owner.username in every domain
-// file they touch. Inspired by is-a-dev/register (MIT).
+// file they touch.
 import t from "ava";
 import fs from "fs-extra";
 import path from "path";

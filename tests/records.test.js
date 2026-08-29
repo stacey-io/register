@@ -1,5 +1,4 @@
 // DNS record validation for every file in domains/
-// Inspired by is-a-dev/register's test suite (MIT).
 import t from "ava";
 import fs from "fs-extra";
 import path from "path";
@@ -71,7 +70,7 @@ t("CNAME must be a single valid hostname", (t) => {
 });
 
 // Tunnels + throwaway TLDs are the bait-and-switch vector: content behind them can
-// change AFTER review. is-a.dev learned this the hard way; we inherit the lesson.
+// change AFTER review.
 t("CNAME targets must not point at disallowed hosts (tunnels, throwaway TLDs, adult TLDs)", (t) => {
     files.forEach((file) => {
         const data = read(file);
