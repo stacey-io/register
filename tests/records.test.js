@@ -6,9 +6,10 @@ import path from "path";
 const domainsPath = path.resolve("domains");
 const files = fs.readdirSync(domainsPath).filter((f) => f.endsWith(".json"));
 
-const validRecordTypes = new Set(["A", "AAAA", "CAA", "CNAME", "MX", "TXT"]);
+const validRecordTypes = new Set(["A", "AAAA", "CAA", "CNAME", "TXT"]); // MX forbidden: mail-as-*.stacey.io = spam/reputation abuse
 
 const reserved = fs.readJsonSync(path.resolve("util/reserved.json"));
+const internal = fs.readJsonSync(path.resolve("util/internal.json"));
 const disallowedCnames = fs.readJsonSync(path.resolve("util/disallowed-cnames.json"));
 
 const ipv4Regex =
@@ -86,12 +87,35 @@ t("CNAME targets must not point at disallowed hosts (tunnels, throwaway TLDs, ad
     t.pass();
 });
 
+t("Brand-impersonation and phishing-pattern names are rejected", (t) => {
+    const BRANDS = ["paypal","google","microsoft","apple","amazon","facebook","instagram","whatsapp",
+        "netflix","github","cloudflare","stripe","coinbase","binance","visa","mastercard","steam",
+        "discord","telegram","roblox","minecraft","openai","chatgpt","anthropic","gemini","tesla"];
+    const PHISH = ["login","signin","signup","verify","secure","wallet","billing","banking","payment",
+        "password","recovery","unlock","confirm","helpdesk","invoice","refund"];
+    const LEET = { "0": "o", "1": "l", "3": "e", "4": "a", "5": "s", "7": "t", "8": "b", "@": "a", "$": "s" };
+    const normalize = (s) => s.toLowerCase().replace(/[013457 8@$]/g, (c) => LEET[c] || c);
+    files.forEach((file) => {
+        const sub = file.replace(/\.json$/, "");
+        const tokens = normalize(sub).split(/[-_.]+/).filter(Boolean);
+        tokens.forEach((tok) => {
+            t.false(BRANDS.includes(tok), `${file}: "${sub}" contains protected brand token "${tok}"`);
+        });
+        const phishy = tokens.some((x) => PHISH.includes(x));
+        t.false(phishy && tokens.length >= 2,
+            `${file}: "${sub}" matches a phishing naming pattern — needs maintainer override`);
+    });
+    t.pass();
+});
+
 t("Reserved subdomains cannot be registered", (t) => {
     files.forEach((file) => {
         const sub = file.replace(/\.json$/, "");
         const root = sub.split(".").pop();
         t.false(reserved.includes(sub), `${file}: "${sub}" is a reserved name`);
         t.false(reserved.includes(root), `${file}: root "${root}" is a reserved name`);
+        t.false(internal.includes(sub), `${file}: "${sub}" is managed by stacey.io`);
+        t.false(internal.includes(root), `${file}: root "${root}" is managed by stacey.io`);
     });
     t.pass();
 });
@@ -108,6 +132,18 @@ t("Nested subdomains require an existing parent owned by the same user", (t) => 
             const parentOwner = read(parentFile).owner.username.toLowerCase();
             t.is(childOwner, parentOwner, `${file}: owner must match parent's owner`);
         }
+    });
+    t.pass();
+});
+
+t("Users are limited to 4 subdomains", (t) => {
+    const byOwner = {};
+    files.forEach((file) => {
+        const owner = read(file).owner.username.toLowerCase();
+        byOwner[owner] = (byOwner[owner] || 0) + 1;
+    });
+    Object.entries(byOwner).forEach(([owner, count]) => {
+        t.true(count <= 4, `${owner} has ${count} subdomains (max 4)`);
     });
     t.pass();
 });

@@ -1,6 +1,6 @@
 # stacey.io Terms of Service
 
-*Last updated: 2026-08-26 — draft, review before launch*
+*Last updated: 2026-08-30*
 
 ## 1. The service
 stacey.io provides free subdomains of `stacey.io` and an optional embedded AI
@@ -38,16 +38,26 @@ You may not use a stacey.io subdomain or the widget for:
 You own and are responsible for everything served under your subdomain. We
 manage only the DNS record and, if enabled, the widget.
 
-## 6. Termination
+## 6. Termination & takedowns
 Registrations inactive, abandoned, unreachable, or in breach of these terms may
-be removed. On removal, DNS records are deleted and the site's widget is revoked.
+be removed at our discretion, with or without notice. Verified abuse reports
+are actioned within 24 hours (see [ABUSE.md](ABUSE.md)). On removal, DNS
+records are deleted and the site's widget is revoked.
 
-## 7. Liability
+## 6a. If the service winds down
+Should stacey.io ever shut down, we commit to at least 60 days' public notice
+in the repository. The registry is public data: your record and DNS targets
+remain exportable at all times, so your site can move to any DNS provider.
+
+## 7. Privacy
+Data handling is described at [stacey.io/privacy.html](https://stacey.io/privacy.html).
+
+## 8. Liability
 The service is free and provided without warranty of any kind. To the maximum
 extent permitted by law, stacey.io is not liable for any damages arising from
 use of the service, including lost data, downtime, or costs incurred on your
 AI provider account.
 
-## 8. Changes
+## 9. Changes
 These terms may change; continued use after changes constitutes acceptance.
 Material changes will be announced in the repository.

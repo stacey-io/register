@@ -48,15 +48,18 @@ t("All files must have required keys and no unknown keys", (t) => {
     t.pass();
 });
 
-t("Owner must have a GitHub username and a contact email", (t) => {
+t("Owner must have a GitHub username (email optional but must be valid if present)", (t) => {
     files.forEach((file) => {
         const data = read(file);
         t.truthy(data.owner?.username, `${file}: owner.username is required`);
-        t.regex(
-            String(data.owner?.email || ""),
-            /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-            `${file}: owner.email must be a valid email`
-        );
+        const email = data.owner?.email;
+        if (email !== undefined && email !== "") {
+            t.regex(
+                String(email),
+                /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                `${file}: owner.email, when present, must be a valid email`
+            );
+        }
         t.not(
             data.owner.username,
             "your-github-username",

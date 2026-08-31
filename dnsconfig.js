@@ -2,8 +2,9 @@
 //
 // Every JSON file in ./domains becomes DNS records for <filename>.stacey.io.
 // Deliberately supports a SMALLER record surface for v1:
-// A, AAAA, CAA, CNAME, MX, TXT. (NS/DS delegation is a big abuse surface —
-// add later only if genuinely needed.)
+// A, AAAA, CAA, CNAME, TXT. (NS/DS delegation and MX are big abuse surfaces —
+// mail-as-*.stacey.io would burn the whole domain's reputation. Add later only
+// if genuinely needed.)
 
 var domainName = "stacey.io";
 var registrar = NewRegistrar("none");
@@ -56,18 +57,6 @@ for (var subdomain in domains) {
         records.push(ALIAS(subdomainName, data.records.CNAME + ".", proxyState));
     }
 
-    if (data.records.MX) {
-        for (var mx in data.records.MX) {
-            var mxRecord = data.records.MX[mx];
-
-            if (typeof mxRecord === "string") {
-                records.push(MX(subdomainName, 10 + parseInt(mx), mxRecord + "."));
-            } else {
-                records.push(MX(subdomainName, parseInt(mxRecord.priority), mxRecord.target + "."));
-            }
-        }
-    }
-
     if (data.records.TXT) {
         if (Array.isArray(data.records.TXT)) {
             for (var txt in data.records.TXT) {
@@ -78,6 +67,11 @@ for (var subdomain in domains) {
         }
     }
 }
+
+// Apex email posture: we send no mail as stacey.io or any subdomain, and we
+// say so — SPF hard-fail + DMARC reject stops spoofing before blocklists do.
+records.push(TXT("@", "\"v=spf1 -all\""));
+records.push(TXT("_dmarc", "\"v=DMARC1; p=reject; sp=reject; adkim=s; aspf=s\""));
 
 // Reserved names are actively black-holed (192.0.2.1 = TEST-NET-1) with the
 // Cloudflare proxy ON, so nobody can squat or spoof them.

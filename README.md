@@ -2,7 +2,22 @@
 
 <p align="center"><strong>stacey.io</strong> gives your project a free <code>.stacey.io</code> subdomain <em>plus</em> a drop-in AI chat assistant — one JSON file, one script tag, done.</p>
 
+<p align="center"><sub>Built and run by <a href="https://github.com/stacey-io">Amit Dange</a>, an independent developer from India. One-person project, run in the open — every registration is a public PR, and the policies (<a href="ABUSE.md">abuse</a> · <a href="SECURITY.md">security</a>) are written down. More at <a href="https://stacey.io/about.html">stacey.io/about</a>.</sub></p>
+
 ---
+
+## ⚡ 60-second quickstart
+
+1. Go to **[stacey.io](https://stacey.io)** → type a name → **Check**
+2. **Log in with GitHub** → we open the PR from your account (token deleted right after)
+3. A bot triages it, a human merges it → **DNS is live in minutes**
+4. Hosting on GitHub Pages/Vercel/Netlify? Add `you.stacey.io` as the **custom
+   domain** in your project settings — done, your site is up
+5. Want the assistant? [Dashboard](https://stacey.io/dashboard.html) → paste a
+   free-tier AI key → copy the one-line `<script>` tag into your page
+
+<!-- screenshot: landing page check -->
+<!-- screenshot: widget chatting on a real site -->
 
 ## ✏️ Register
 
@@ -15,7 +30,10 @@
    Set `"stacey": { "assistant": true }` if you want the AI widget.
 3. Open a **pull request**. CI validates it automatically; a maintainer reviews it.
 4. On merge:
-   - your DNS goes live within minutes,
+   - your DNS goes live within minutes.
+     **GitHub Pages users:** also set the custom domain on YOUR repo
+     (Settings → Pages → Custom domain → `<your-subdomain>.stacey.io`) —
+     GitHub won't serve the new hostname until you do,
    - if you enabled the assistant, you'll get a **dashboard link by email** — add
      your AI API key there (a free-tier key works!), then paste this into your site:
 
@@ -57,7 +75,7 @@ secrets in it. You can edit it anytime later from your dashboard without a new P
 
 ## 📏 The rules (short version)
 
-- Your PR author username must match `owner.username` — you can only touch your own subdomains.
+- Your PR author username must match `owner.username` — you can only touch your own subdomains.\n- **Max 4 subdomains per user.**
 - No reserved names, no tunnel/throwaway CNAME targets, no parked empty domains.
 - Dev projects, portfolios, docs, and personal sites — no illegal content,
   phishing, impersonation, or adult content. Full list in the
@@ -71,12 +89,18 @@ validation, a reachability check on the target, and an AI risk review for
 phishing/impersonation signals. Low-risk PRs get labeled `triage:low-risk`
 for one-click merging; anything odd gets `triage:needs-review` with notes.
 A human maintainer always makes the final call. (Requires the
-`ANTHROPIC_API_KEY` repo secret; the workflow is fork-safe — it never
+`GEMINI_API_KEY` repo secret; the workflow is fork-safe — it never
 executes PR code.)
 
 ## ⛔ Report abuse
 
 Found a subdomain breaking the rules? [Open an abuse report](../../issues/new?template=report-abuse.md&labels=report-abuse). Assistant abuse gets the widget killed instantly; DNS removal follows.
+
+## 🧯 Disaster recovery
+
+This repo **is** the DNS. The entire zone rebuilds from it in one click:
+Actions → **Publish DNS** → Run workflow. Nothing about your record lives
+only in a database.
 
 ## 🔍 What's public and what isn't
 
@@ -85,6 +109,10 @@ stays public: you can see every registered subdomain, every pending PR, and
 report abuse on any of them. The assistant backend (key vault, chat proxy,
 dashboard) is closed-source and holds no registry data of its own; this repo
 remains the source of truth for who owns what.
+
+## 🚨 Abuse
+
+See [ABUSE.md](ABUSE.md) — verified reports are actioned within 24 hours.
 
 ## 📜 License
 

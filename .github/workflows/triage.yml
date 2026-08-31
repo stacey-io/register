@@ -35,9 +35,31 @@ jobs:
             - name: Triage the PR
               env:
                   GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-                  ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+                  GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
                   SAFE_BROWSING_KEY: ${{ secrets.SAFE_BROWSING_KEY }}
                   PR_NUMBER: ${{ github.event.pull_request.number }}
                   PR_AUTHOR: ${{ github.event.pull_request.user.login }}
                   REPO: ${{ github.repository }}
               run: node util/triage.mjs
+
+            - name: Arm auto-merge when verdict is low-risk
+              if: always()
+              env:
+                  GH_TOKEN: ${{ secrets.AUTOMERGE_TOKEN }}
+                  PR: ${{ github.event.pull_request.number }}
+                  REPO: ${{ github.repository }}
+              run: |
+                  if [ -z "$GH_TOKEN" ]; then
+                    echo "AUTOMERGE_TOKEN not configured — skipping auto-merge arming."
+                    exit 0
+                  fi
+                  LABELS=$(gh pr view "$PR" --repo "$REPO" --json labels --jq '[.labels[].name] | join(",")')
+                  case "$LABELS" in
+                    *triage:low-risk*)
+                      case "$LABELS" in
+                        *no-automerge*|*report-abuse*) echo "opt-out label present — not arming";;
+                        *) gh pr merge --squash --auto "$PR" --repo "$REPO" && \
+                           gh pr comment "$PR" --repo "$REPO" --body "🤖 Low-risk — auto-merge armed. Merges once required checks (and any required review) pass; a new push disarms it. Add \`no-automerge\` to stop." ;;
+                      esac ;;
+                    *) echo "not low-risk — no arming" ;;
+                  esac

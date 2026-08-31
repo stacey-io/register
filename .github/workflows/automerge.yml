@@ -1,0 +1,78 @@
+# Auto-merge support for low-risk registrations.
+#
+# HOW ARMING ACTUALLY WORKS (two paths):
+# 1. Bot path: triage.yml itself enables auto-merge right after it applies
+#    `triage:low-risk` (see its final step). It CANNOT be done here: labels
+#    applied with the workflow GITHUB_TOKEN do not trigger other workflows,
+#    so a `labeled:` job would simply never run for bot labels.
+# 2. Human path: a maintainer applying `triage:low-risk` by hand DOES trigger
+#    this workflow, and the `arm` job below picks it up.
+#
+# WHY A DEDICATED PAT (AUTOMERGE_TOKEN):
+# Merges attributed to github-actions[bot] do not fire `push` workflows —
+# publish.yml and provision.yml would silently never run and DNS would never
+# go live. Auto-merge must therefore be enabled with a real user's token.
+# Create a fine-grained PAT (this repo only; Contents: RW, Pull requests: RW)
+# and store it as the AUTOMERGE_TOKEN secret. No token = arming is skipped.
+#
+# SAFETY:
+# - Only users with triage/write access can apply labels.
+# - Any new push (`synchronize`) disarms and strips the label; re-arming
+#   requires a fresh triage pass of the new head. No label-then-force-push.
+# - Branch protection still applies: required CI must pass, and while
+#   "require review" is on, auto-merge fires only AFTER your approval
+#   (i.e. it saves the merge click; drop required-review later to go fully
+#   automatic for low-risk).
+# - `no-automerge` or `report-abuse` labels opt a PR out.
+#
+# One-time setup: Settings -> General -> enable "Allow auto-merge".
+
+name: Auto-merge low-risk
+
+on:
+    pull_request_target:
+        types: [labeled, synchronize]
+
+permissions:
+    contents: write
+    pull-requests: write
+
+concurrency:
+    group: automerge-${{ github.event.pull_request.number }}
+    cancel-in-progress: false
+
+jobs:
+    disarm:
+        if: github.event.action == 'synchronize'
+        runs-on: ubuntu-latest
+        steps:
+            - name: New push invalidates the verdict — stand down
+              env:
+                  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  PR: ${{ github.event.pull_request.number }}
+                  REPO: ${{ github.repository }}
+              run: |
+                  gh pr merge --disable-auto "$PR" --repo "$REPO" || true
+                  gh pr edit "$PR" --repo "$REPO" --remove-label "triage:low-risk" || true
+
+    arm:
+        if: >
+            github.event.action == 'labeled' &&
+            github.event.label.name == 'triage:low-risk' &&
+            github.event.sender.type != 'Bot' &&
+            !contains(github.event.pull_request.labels.*.name, 'no-automerge') &&
+            !contains(github.event.pull_request.labels.*.name, 'report-abuse')
+        runs-on: ubuntu-latest
+        steps:
+            - name: Enable auto-merge (needs AUTOMERGE_TOKEN)
+              env:
+                  GH_TOKEN: ${{ secrets.AUTOMERGE_TOKEN }}
+                  PR: ${{ github.event.pull_request.number }}
+                  REPO: ${{ github.repository }}
+              run: |
+                  if [ -z "$GH_TOKEN" ]; then
+                    echo "AUTOMERGE_TOKEN not configured — skipping (merges stay manual)."
+                    exit 0
+                  fi
+                  gh pr merge --squash --auto "$PR" --repo "$REPO"
+                  gh pr comment "$PR" --repo "$REPO" --body "🤖 Low-risk — auto-merge armed. Merges once required checks (and any required review) pass; a new push disarms it. Add \`no-automerge\` to stop."

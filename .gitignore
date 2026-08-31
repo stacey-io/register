@@ -2,5 +2,3 @@ node_modules/
 creds.json
 zonecache.json
 .env
-.DS_Store
-*.log
