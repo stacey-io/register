@@ -34,7 +34,9 @@
      **GitHub Pages users:** also set the custom domain on YOUR repo
      (Settings → Pages → Custom domain → `<your-subdomain>.stacey.io`) —
      GitHub won't serve the new hostname until you do,
-   - if you enabled the assistant, you'll get a **dashboard link by email** — add
+   - if you enabled the assistant, the bot **comments your dashboard link on
+     the merged PR** (GitHub emails you about PR comments, so it lands in
+     your inbox too) — add
      your AI API key there (a free-tier key works!), then paste this into your site:
 
 ```html

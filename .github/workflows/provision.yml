@@ -3,8 +3,10 @@
 # changed. The backend then:
 #   - creates/updates the site record and generates its site_id
 #   - binds the site_id to the subdomain as an allowed widget origin
-#   - emails the owner their dashboard link (where they add their AI key)
 #   - on deletions: revokes the site_id (instant widget kill switch)
+# Finally, this workflow comments the dashboard link on the merged PR —
+# GitHub emails PR authors about comments, so that IS the owner
+# notification, with zero email infrastructure.
 name: Provision assistant
 
 on:
@@ -14,6 +16,10 @@ on:
             - "domains/*"
 
     workflow_dispatch:
+
+permissions:
+    contents: read
+    pull-requests: write
 
 concurrency:
     group: ${{ github.ref }}-provision
@@ -67,3 +73,53 @@ jobs:
                     -H "Authorization: Bearer ${{ secrets.STACEY_PROVISION_TOKEN }}" \
                     -H "Content-Type: application/json" \
                     -d "$PAYLOAD"
+
+            - name: Comment the dashboard link on the merged PR
+              env:
+                  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  PAYLOAD: ${{ steps.changes.outputs.PAYLOAD }}
+                  REPO: ${{ github.repository }}
+              run: |
+                  # GitHub emails PR authors when their PR receives a comment,
+                  # so this comment doubles as the owner's email notification.
+                  python3 - > /tmp/note.md <<'PY'
+                  import json, os
+                  p = json.loads(os.environ["PAYLOAD"])
+                  rows = [c for c in p["changes"] if c["status"] != "D"]
+                  if rows:
+                      def assistant_on(c):
+                          return bool(((c.get("data") or {}).get("stacey") or {}).get("assistant"))
+                      lines = ["<!-- stacey-provision-note -->", "## \U0001F389 Your subdomain is live!", ""]
+                      for c in rows:
+                          lines.append(f"- `{c['subdomain']}.stacey.io` \u2014 DNS is publishing now (allow a few minutes)")
+                      lines += ["",
+                          "**Hosting on GitHub Pages / Vercel / Netlify?** Also add the subdomain "
+                          "as the **custom domain** in YOUR project settings \u2014 the host won't "
+                          "serve the new hostname until you do."]
+                      if any(assistant_on(c) for c in rows):
+                          lines += ["",
+                              "**Your AI assistant \u2014 2 minutes to switch on:**",
+                              "1. Open your [dashboard](https://stacey.io/dashboard) \u2014 log in with this GitHub account",
+                              "2. Paste an AI API key (a free-tier Gemini key works)",
+                              "3. Copy the one-line `<script>` snippet onto your site \u2014 done",]
+                      lines += ["", "_You're receiving this because GitHub notifies you about comments on your PR._"]
+                      print("\n".join(lines))
+                  PY
+                  if [ ! -s /tmp/note.md ]; then
+                    echo "deletions only — no comment"
+                    exit 0
+                  fi
+                  # Map the merged commit(s) back to their PR (squash-merge: HEAD -> PR)
+                  PRS=$(gh api "repos/$REPO/commits/$GITHUB_SHA/pulls" --jq '.[].number' 2>/dev/null | sort -u || true)
+                  if [ -z "$PRS" ]; then
+                    echo "no associated PR (direct push or dispatch) — skipping comment"
+                    exit 0
+                  fi
+                  for PR in $PRS; do
+                    if gh api "repos/$REPO/issues/$PR/comments" --paginate --jq '.[].body' 2>/dev/null | grep -q 'stacey-provision-note'; then
+                      echo "PR #$PR already has the provision note — skipping"
+                      continue
+                    fi
+                    gh pr comment "$PR" --repo "$REPO" --body-file /tmp/note.md
+                    echo "commented on PR #$PR"
+                  done
